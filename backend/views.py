@@ -45,6 +45,10 @@ def register(request):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
 
+        # 检查是否已存在相同的邮箱
+        if CustomUser.objects.filter(email=email).exists():
+            return Response({'status': 'error', 'message': 'Email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
         # 創建新用戶
         user = CustomUser.objects.create_user(username=username, email=email, password=password, first_name=first_name, last_name=last_name)
         if user is not None:
@@ -94,7 +98,7 @@ def logout_view(request):
 def change_password(request):
 
     if request.method == 'POST':
-        username = request.data['username']
+        username = request.GET.get('username')
         old_password = request.data.get('old_password')
         new_password = request.data.get('new_password')
         user = CustomUser.objects.get(username=username)
@@ -135,7 +139,7 @@ def password_reset_request(request):
                 [email],
                 fail_silently=False,
             )
-            return Response({'status': 'success', 'message': 'Password reset email has been sent.'})
+            return Response({'status': 'success', 'message': 'Password reset email has been sent.', 'token': token, 'uid': uid}, status=status.HTTP_200_OK)
         except CustomUser.DoesNotExist:
             return Response({'status': 'error', 'message': 'No account with that email.'}, status=status.HTTP_400_BAD_REQUEST)
     return Response({'status': 'error', 'message': 'Invalid request method.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
